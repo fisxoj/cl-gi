@@ -1,0 +1,5 @@
+* Reading th .gir file
+** Namespace
+   - Questions
+       - What to do with lists of .so's? Try to load in order?
+       - What about Gee-2.0.gir, which has no .so file in it?
