@@ -80,7 +80,7 @@
       (t (read-from-string typestring))
       )))
 
-(defun lispify-gir-const (name)
+(defun lispify-gir-constant (name)
   (format nil "+~a+" (coerce (loop for c across name
 				for i upfrom 0
 				if (eql c #\_)
@@ -96,12 +96,7 @@
        return (subseq name l)))
 
 (defun gsymbol->lisp (name repo)
-  (coerce  (loop for c across (gobject->lisp name (repository-symbol-prefixes repo))
-	      collect (if (upper-case-p c)
-			  (progn (princ (char-downcase c))
-				 (princ #\-))
-			  (princ c)))
-	   'string))
+  (c-name-to-lis-name (gobject->lisp name (repository-symbol-prefixes repo))))
 
 (defun gfunction->lisp (name repo)
   (coerce
@@ -109,9 +104,13 @@
 	  (fixed-name (if (eql #\_ (elt name 0))
 			  (subseq name 1)
 			  name)))
-     (loop for c across fixed-name
-	if (eql c #\_)
-	collect #\-
-	else collect c))
+     (c-name-to-lisp-name fixed-name))
    'string))
 
+(defun c-name-to-lisp-name (name)
+  (coerce
+   (loop for c across name
+      if (eql c #\_)
+      collect #\-
+      else collect c)
+   'string))
