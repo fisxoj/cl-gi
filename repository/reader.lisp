@@ -87,27 +87,42 @@ Functions for parsing things inside the namespace
 	  ("alias" (parse-alias child repo))
 	  ("constant" (parse-constant child repo))
 	  ("function" (parse-function child repo))
-	  (t (error "No parser for node type ~a" (xmlrep-tag child))))))
+	  (t (warn "No parser for node type ~a" (xmlrep-tag child))))))
 
 
 (defun parse-alias (node repo)
-  (if-let ((name (xmlrep-attrib-value "name" node))
-	   (type (get-type node)))
-    `(defctype ,name ,type)
-    (warn "Unable to parse alias ~a~%" name)))
+  (declare (ignore repo))
+  (if-let ((new-type (xmlrep-attrib-value "type" node))
+	   (type (gir-to-cffi (get-type node))))
+    (print-eval `(defctype ,(read-from-string new-type) ,type))
+    (warn "Unable to parse alias ~a~%" new-type)))
 
 (defun parse-constant (node repo)
-  (let* ((name (xmlrep-attrib-value "name" node))
+  (let* ((name (lispify-gir-const (xmlrep-attrib-value "name" node)))
 	 (type (gir-to-cffi (get-type node)))
-	 (value (xmlrep-attrib-value "value"))
+	 (value (xmlrep-attrib-value "value" node))
 	 (*package* (repository-package repo)))
-    (setf (export (intern (lispify-gir-constant name))) value)))
+    (export (intern name))
+    (print-eval `(defconstant ,(read-from-string name) ,value))))
 
 (defun parse-function (node repo)
-  (let* ((name (xmlrep-attrib-value "name" node))
-	 (type)
-	 ))
-  )
+  (when (xmlrep-attrib-value "moved-to" node nil)
+    (warn "Function ~a has moved, skipping this entry" (xmlrep-attrib-value "identifier" node))
+    (return-from parse-function))
+  (let* ((name (xmlrep-attrib-value "identifier" node))
+	 (lisp-name (gfunction->lisp name repo))
+	 (return-type (gir-to-cffi (get-type (xmlrep-find-child-tag "return-value" node))))
+	 (parameters (loop for parameter in
+			  (xmlrep-find-child-tags "parameter"
+						  (xmlrep-find-child-tag "parameters" node))
+			for name = (read-from-string (c-name-to-lisp-name (xmlrep-attrib-value "name" parameter)))
+			for type = (gir-to-cffi (get-type parameter))
+			collect (list name type)))
+	 (*package* (repository-package repo)))
+    (export (intern lisp-name))
+    (print-eval `(defcfun (,name ,lisp-name) ,return-type
+		     ,@parameters))
+    ))
 #|
 
 Helpler functions for reading from xmls nodes
