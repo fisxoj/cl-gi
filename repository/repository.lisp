@@ -27,9 +27,28 @@
    (function-prefixes :accessor repository-function-prefixes :initarg :f-prefixes)
    (type-prefixes :accessor repository-type-prefixes :initarg :t-prefixes)
    (shared-library :accessor repository-shared-library :initarg :so)
-   (includes :accessor repository-includes :initform '())
-   (packages :accessor repository-packages :initform '())))
+   (includes :accessor repository-includes :initarg :includes)
+   (packages :accessor repository-packages :initarg :packages)
+   (package :accessor repository-package :initarg :package))
+  (:documentation "Class for storing information about a repository, including what other repositories it depends on.
+")
+  )
 
 (defun load-repository (name version)
   (multiple-value-bind (path format) (find-repository name version)
     (read-repository path format)))
+
+(defgeneric repository-load-library (repo)
+  (:documentation "Loads the library specified in the gir file into the ffi"))
+
+(defmethod repository-load-library ((repo repository))
+  (loop for library in (repository-shared-library repo)
+     when (handler-case (load-foreign-library library)
+	    (load-foreign-library-error () nil))
+     return t
+     finally (error "Unable to load any of ~(~a~)" (repository-shared-library repo))))
+
+(defmacro gir-foreign-library (name so-list)
+  `(define-foreign-library ,name
+     (:unix (:or ,@so-list))
+     (t (:default ,(first (split-sequence "." (first so-list)))))))
