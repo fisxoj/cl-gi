@@ -29,15 +29,23 @@
     ("glong" 	.	:long)
     ("gint"	.	:int)
     ("gboolean" .	:int)
+    ("gpointer" .	:pointer)
 
     ;; More types
     ("void"	.	:void)
     ("int"	.	:int)
+    ("char"	.	:char)
     ("char*"	.	:string)
+    ("gchar*"	.	:string)
     ;; NOTE: String won't be caught preogrammatically, but rather in (gir-to-cffi), which
     ;; has a special case for it
 
+    ;; FIXME: This isn't right, but there doesn't seem to be a
+    ;; long-double type in cffi
+    ("long double".	:double)
+
     ("gsize"	.	:ulong)
+    ("gssize"	.	:long)
 
     ("gboolean"	.	:boolean)
 
@@ -47,12 +55,17 @@
     ("gulong"	.	:ulong)
     ("gchar"	.	:char)
 
+    ("gint8"	.	:int8)
+    ("guint8"	.	:uint8)
     ("gint16"	.	:int16)
     ("guint16"	.	:uint16)
     ("gint32"	.	:int32)
     ("guint32"	.	:uint32)
+    ("gint64"	.	:int64)
+    ("guint64"	.	:uint64)
 
     ("gfloat"	.	:float)
+    ("gdouble"	.	:double)
     ))
 
 (defun gir-to-cffi (typestring)
