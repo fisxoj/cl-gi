@@ -68,7 +68,10 @@ further processing"
 				     :t-prefixes t-prefixes
 				     :f-prefixes f-prefixes
 				     :packages package-list
-				     :includes include-list))
+				     :includes include-list
+				     :package (make-package repo-name
+							    :nicknames (list name))
+				     ))
 			      (error "Repository ~a already is loaded!" repo-name))
 			  )))
 
