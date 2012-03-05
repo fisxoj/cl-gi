@@ -41,7 +41,7 @@ further processing"
   (let ((namespace (xmlrep-find-child-tag "namespace" root))
 	(includes (remove-if #'header-file-p (xmlrep-find-child-tags "include" root)))
 	(packages (xmlrep-find-child-tags "package" root)))
-    (make-repository namespace includes packages)))
+    (parse-namespace namespace (make-repository namespace includes packages))))
 
 
 (defun make-repository (namespace includes packages)
