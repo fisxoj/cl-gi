@@ -34,31 +34,6 @@
 Main repository-parsing function
 
 |#
-
-#|
-(defun parse-repository (root)
-  (loop for node in (node-children root)
-       for node-name = (xmlrep-tag node)
-     ;; FIXME: This looks wrong
-     for namespace = nil
-
-     ;; Find namespace node and save it
-     when (string= node-name "namespace")
-     do (setf namespace  node)
-
-     ;; Collect the includes and packages
-     when (let ((name (xmlrep-attrib-value "name" node)))
-	    (and (string= node-name "include")
-		 ;; Ignore header file includes, e.g. <c:include name="gee.h" />
-		 (not (string= (subseq name (- (length name) 2) (length name)) ".h"))))
-     collect node into includes
-     when (string= (node-name node) "package")
-     collect node into packages
-
-     ;; Feed all of our new information into the repository maker
-     finally (make-repository namespace includes packages)))
-|#
-
 (defun parse-repository (root)
   "Assemble packages and includes for the repository and find the namespace node for
 further processing"
@@ -99,63 +74,6 @@ further processing"
 
 #|
 
-
-(defun make-repository (namespace includes packages)
-  "Generate the repository object that will store information about it and
-what it requires to operate."
-
-  (if-let ((name (xmlrep-attrib-value "name" namespace))
-	   (version (xmlrep-attrib-value "version" namespace))
-	   (repo-name (format nil "~a-~a" (xmlrep-attrib-value "name" namespace)
-			      (xmlrep-attrib-value "version" namespace)))
-	   (shared-library (split-comma (xmlrep-attrib-value "shared-library" namespace)))
-	   ;; Prefixes are stored longest first in their lists, so that when
-	   ;; we try to match prefixes later, we try the longer ones first,
-	   ;; to avoid a partial match when we have "g" and "glib"
-	   ;; where we could end up creating (glib:lib-init) instead of
-	   ;; (glib:init)
-	   (t-prefixes (attrib-value-split-sort "identifier-prefixes" namespace))
-	   (f-prefixes (attrib-value-split-sort "symbol-prefixes" namespace)))
-
-    ;; Check if we've already loaded the repository
-
-    (if (not (gethash repo-name *repository*))
-
-	;; Make a new repository only if the required info exists
-	(let ((repo (make-instance 'repository
-				   :name name
-				   :version version
-				   :so shared-library
-				   :f-prefixes f-prefixes
-				   :t-prefixes t-prefixes)))
-
-	  ;; Add includes and packages information
-	  (setf (repository-includes repo) (loop for node in includes
-					      for name = (xmlrep-attrib-value "name" node)
-					      for version = (xmlrep-attrib-value "version" node)
-					      collect (list name version))
-
-		(repository-packages repo) (loop for node in packages
-					      for name = (xmlrep-attrib-value "name" node)
-					      collect name)
-		(repository-package repo) (make-package name))
-
-	  (setf (gethash repo-name *repository*) repo)
-
-	  ;; Set up some cffi things
-	  ;; notably, there is only a :unix clause to this library, since
-	  ;; GIR only exists on linux anyway.
-	  (gir-foreign-library name shared-library)
-	  )
-	(error "Repository ~a already is loaded!" repo-name))
-
-    ;; If we didn't get these necessary attributes, error and bail
-    (error "Unable to load information about namespace ~a" name)))
-
-|#
-
-#|
-
 Functions for parsing things inside the namespace
 
 |#
@@ -189,7 +107,7 @@ Functions for parsing things inside the namespace
   )
 #|
 
-Helpler functions
+Helpler functions for reading from xmls nodes
 
 |#
 
@@ -202,32 +120,6 @@ Helpler functions
 
 (defun split-comma (string)
   (split-sequence #\, string))
-
-(defun gobject->lisp (name prefixes)
-    (loop for prefix in prefixes
-       for l = (length prefix)
-       when (string= (subseq name 0 l) prefix)
-       return (subseq name l)))
-
-(defun gsymbol->lisp (name repo)
-  (coerce  (loop for c across (gobject->lisp name (repository-symbol-prefixes repo))
-	      collect (if (upper-case-p c)
-			  (progn (princ (char-downcase c))
-				 (princ #\-))
-			  (princ c)))
-	   'string))
-
-(defun gfunction->lisp (name repo)
-  (coerce
-   (let* ((name (gobject->lisp name (repository-function-prefixes repo)))
-	  (fixed-name (if (eql #\_ (elt name 0))
-			  (subseq name 1)
-			  name)))
-     (loop for c across fixed-name
-	if (eql c #\_)
-	collect #\-
-	else collect c))
-   'string))
 
 (defun name-repository (name version)
   (format nil "~a-~a" name version))
@@ -267,5 +159,8 @@ We could get at the 'pizza' attribute of tag2 and 'name' from tag1 by passing
      ,@body))
 
 (defun header-file-p (node)
+  "For filtering out <c:include>'s from the top level of repository files, which
+xmls doesn't parse differently than <include>'s"
+
   (with-node-attributes node (name)
 		       (string= (subseq name (- (length name) 2) (length name)) ".h")))
