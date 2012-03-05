@@ -72,9 +72,13 @@
   (let ((length (length typestring)))
     (cond
       ((string= typestring "gchar*") :string)
+      ((string= typestring "char*") :string)
       ((string= (subseq typestring (1- length)) "*")
        `(:pointer ,(gir-to-cffi (subseq typestring 0 (1- length)))))
-      (t (cdr (assoc typestring +gtype-ctype+ :test #'string=))))))
+      ((assoc typestring +gtype-ctype+ :test #'string=)
+       (cdr (assoc typestring +gtype-ctype+ :test #'string=)))
+      (t (read-from-string typestring))
+      )))
 
 (defun lispify-gir-const (name)
   (format nil "+~a+" (coerce (loop for c across name
