@@ -182,3 +182,7 @@ xmls doesn't parse differently than <include>'s"
 
   (with-node-attributes node (name)
 		       (string= (subseq name (- (length name) 2) (length name)) ".h")))
+
+(defun print-eval (form)
+  (format t "Evaluating ~a~%" form)
+  (eval form))
