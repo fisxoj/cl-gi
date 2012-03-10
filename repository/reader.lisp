@@ -103,7 +103,8 @@ Functions for parsing things inside the namespace
 	 (value (xmlrep-attrib-value "value" node))
 	 (*package* (repository-package repo)))
     (export (intern name))
-    (print-eval `(defconstant ,(read-from-string name) ,value))))
+    (print-eval `(defconstant ,(read-from-string name)
+		   ,(if (eq type :string) value (read-from-string value))))))
 
 (defun parse-function (node repo)
   (when (xmlrep-attrib-value "moved-to" node nil)
