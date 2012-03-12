@@ -49,34 +49,37 @@ further processing"
 
 (defun make-repository (namespace includes packages)
   (with-node-attributes namespace (name version identifier-prefixes symbol-prefixes shared-library)
-			(let ((repo-name (name-repository name version))
-			      (so-files (split-comma shared-library))
-			      (t-prefixes (split-comma identifier-prefixes))
-			      (f-prefixes (split-comma symbol-prefixes))
-			      (include-list (loop for node in includes
-					       for name = (xmlrep-attrib-value "name" node)
-					       for version = (xmlrep-attrib-value "version" node)
-					       collect (list name version)))
-			      (package-list (loop for node in packages
-					       for name = (xmlrep-attrib-value "name" node)
-					       collect name))
-			      )
-			  (if (not (gethash repo-name *repository*))
-			      (setf (gethash repo-name *repository*)
-				    (make-instance
-				     'repository
-				     :name name
-				     :version version
-				     :so so-files
-				     :t-prefixes t-prefixes
-				     :f-prefixes f-prefixes
-				     :packages package-list
-				     :includes include-list
-				     :package (make-package repo-name
-							    :nicknames (list name))
-				     ))
-			      (error "Repository ~a already is loaded!" repo-name))
-			  )))
+    (let ((repo-name (name-repository name version))
+	  (so-files (split-comma shared-library))
+	  (t-prefixes (split-comma identifier-prefixes))
+	  (f-prefixes (split-comma symbol-prefixes))
+	  (include-list (when includes
+			  (loop for node in includes
+			     for name = (xmlrep-attrib-value "name" node)
+			     for version = (xmlrep-attrib-value "version" node nil)
+			     when (and name version)
+			     collect (list name version))))
+	  (package-list (when packages
+			  (loop for node in packages
+			     for name = (xmlrep-attrib-value "name" node)
+			     collect name)))
+	  )
+      (if (not (gethash repo-name *repository*))
+	  (setf (gethash repo-name *repository*)
+		(make-instance
+		 'repository
+		 :name name
+		 :version version
+		 :so so-files
+		 :t-prefixes t-prefixes
+		 :f-prefixes f-prefixes
+		 :packages package-list
+		 :includes include-list
+		 :package (make-package (read-from-string repo-name)
+					:nicknames (list (read-from-string name)))
+		 ))
+	  (error "Repository ~a already is loaded!" repo-name))
+      )))
 
 #|
 
