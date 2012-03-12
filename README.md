@@ -34,7 +34,11 @@ As things currently stand, this will result in your lisp telling you about all t
 	"This code calls glib version 2.29"
 	CL-USER> (cffi:with-foreign-pointer-as-string (s 128)
 	   (GLib:sprintf s "Here's a number %g, and a char %c" :double 34.21d3 :char 78))
-"Here's a number 34210, and a char N"
+	"Here's a number 34210, and a char N"
+	CL-USER> (cffi:with-foreign-pointer-as-string (s 128)
+	   (GLib:sprintf s "Here's a number %g, and a char %c" :double 34.21d3 :char 78))
+	"Here's a number 34210, and a char N"
+
 
 
 Ok, now if you'll excuse me, I have a lot more code to write for this...
