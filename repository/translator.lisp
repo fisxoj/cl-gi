@@ -74,10 +74,13 @@
       ((string= typestring "gchar*") :string)
       ((string= typestring "char*") :string)
       ((string= (subseq typestring (1- length)) "*")
-       `(:pointer ,(gir-to-cffi (subseq typestring 0 (1- length)))))
+       (if (eq (gir-to-cffi (subseq typestring 0 (1- length))) :pointer)
+	   `(:pointer ,(gir-to-cffi (subseq typestring 0 (1- length))))
+	   :pointer))  ;; If it's a pointer to something we don't understand,
+      ;; it's probably a pointer to a GObject of some kind
       ((assoc typestring +gtype-ctype+ :test #'string=)
        (cdr (assoc typestring +gtype-ctype+ :test #'string=)))
-      (t (read-from-string typestring))
+      (t :pointer) ;; If all else fails, it's probably a pointer
       )))
 
 (defun lispify-gir-constant (name)
