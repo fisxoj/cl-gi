@@ -38,15 +38,14 @@
   (multiple-value-bind (path format) (find-repository name version)
     (read-repository path format)))
 
-(defgeneric repository-load-library (repo)
+(defgeneric repository-load-libraries (repo)
   (:documentation "Loads the library specified in the gir file into the ffi"))
 
-(defmethod repository-load-library ((repo repository))
+(defmethod repository-load-libraries ((repo repository))
   (loop for library in (repository-shared-library repo)
-     when (handler-case (load-foreign-library library)
-	    (load-foreign-library-error () nil))
-     return t
-     finally (error "Unable to load any of ~(~a~)" (repository-shared-library repo))))
+     do (handler-case (load-foreign-library library)
+	    (load-foreign-library-error ()
+	      (warn "Unable to load library ~a" library)))))
 
 (defmacro gir-foreign-library (name so-list)
   `(define-foreign-library ,name

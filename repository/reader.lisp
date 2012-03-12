@@ -38,10 +38,13 @@ Main repository-parsing function
   "Assemble packages and includes for the repository and find the namespace node for
 further processing"
 
-  (let ((namespace (xmlrep-find-child-tag "namespace" root))
+  (let* ((namespace (xmlrep-find-child-tag "namespace" root))
 	(includes (remove-if #'header-file-p (xmlrep-find-child-tags "include" root)))
-	(packages (xmlrep-find-child-tags "package" root)))
-    (parse-namespace namespace (make-repository namespace includes packages))))
+	(packages (xmlrep-find-child-tags "package" root))
+	(repo (make-repository namespace includes packages))
+	)
+    (repository-load-libraries repo)
+    (parse-namespace namespace repo)))
 
 
 (defun make-repository (namespace includes packages)
