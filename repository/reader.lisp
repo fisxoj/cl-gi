@@ -133,7 +133,32 @@ Helpler functions for reading from xmls nodes
 |#
 
 (defun get-type (node)
-  (xmlrep-attrib-value "type" (xmlrep-find-child-tag "type" node)))
+  ;; Check for a subtag named type and get information from it,
+  ;; in the event it doesn't exist, check to see if there is and <array>
+  ;; tag before giving up and erroring.
+  (let ((varargs (xmlrep-find-child-tag "varargs" node nil))
+	(array (xmlrep-find-child-tag "array" node nil))
+	(node (xmlrep-find-child-tag "type" node nil)))
+
+    (if varargs
+	:varargs
+	(xmlrep-attrib-value "type" (or array node)))))
+
+(defun collect-parameters (node)
+  (when (xmlrep-find-child-tag "parameters" node nil)
+    (loop for parameter in
+	 (xmlrep-find-child-tags "parameter"
+				 (xmlrep-find-child-tag "parameters" node nil))
+       for type = (get-type parameter)
+
+       if (eq type :varargs)
+       collect '&rest
+       else
+       collect (list
+		;; Name
+		(read-from-string (c-name-to-lisp-name (xmlrep-attrib-value "name" parameter)))
+		;; Cffi Type
+		(gir-to-cffi type)))))
 
 (defun attrib-value-split-sort (name alist)
   (let ((vals (split-comma (xmlrep-attrib-value name alist))))
