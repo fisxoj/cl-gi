@@ -113,23 +113,19 @@ Functions for parsing things inside the namespace
 		   ,(if (eq type :string) value (read-from-string value))))))
 
 (defun parse-function (node repo)
-  (when (xmlrep-attrib-value "moved-to" node nil)
-    (warn "Function ~a has moved, skipping this entry" (xmlrep-attrib-value "identifier" node))
-    (return-from parse-function))
-  (let* ((name (xmlrep-attrib-value "identifier" node))
-	 (lisp-name (gfunction->lisp name repo))
-	 (return-type (gir-to-cffi (get-type (xmlrep-find-child-tag "return-value" node))))
-	 (parameters (loop for parameter in
-			  (xmlrep-find-child-tags "parameter"
-						  (xmlrep-find-child-tag "parameters" node))
-			for name = (read-from-string (c-name-to-lisp-name (xmlrep-attrib-value "name" parameter)))
-			for type = (gir-to-cffi (get-type parameter))
-			collect (list name type)))
-	 (*package* (repository-package repo)))
-    (export (intern lisp-name))
-    (print-eval `(defcfun (,name ,lisp-name) ,return-type
-		     ,@parameters))
-    ))
+  (let ((*package* (repository-package repo)))
+    (when (xmlrep-attrib-value "moved-to" node nil)
+      (warn "Function ~a has moved, skipping this entry" (xmlrep-attrib-value "identifier" node))
+      (return-from parse-function))
+    (let* ((name (xmlrep-attrib-value "identifier" node))
+	   (lisp-name (read-from-string (gfunction->lisp name repo)))
+	   (return-type (gir-to-cffi (get-type (xmlrep-find-child-tag "return-value" node))))
+	   (parameters (collect-parameters node))
+	   (*package* (repository-package repo)))
+      (print-eval `(defcfun (,(coerce name 'simple-string) ,lisp-name) ,return-type
+		     ,@(when parameters parameters)))
+      (export lisp-name)
+      )))
 #|
 
 Helpler functions for reading from xmls nodes
