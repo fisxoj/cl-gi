@@ -101,7 +101,7 @@ Functions for parsing things inside the namespace
     (warn "Unable to parse alias ~a~%" new-type)))
 
 (defun parse-constant (node repo)
-  (let* ((name (lispify-gir-const (xmlrep-attrib-value "name" node)))
+  (let* ((name (lispify-gir-constant (xmlrep-attrib-value "name" node)))
 	 (type (gir-to-cffi (get-type node)))
 	 (value (xmlrep-attrib-value "value" node))
 	 (*package* (repository-package repo)))
