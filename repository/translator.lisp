@@ -99,7 +99,7 @@
        return (subseq name l)))
 
 (defun gsymbol->lisp (name repo)
-  (c-name-to-lis-name (gobject->lisp name (repository-symbol-prefixes repo))))
+  (c-name-to-lisp-name (gobject->lisp name (repository-symbol-prefixes repo))))
 
 (defun gfunction->lisp (name repo)
   (coerce
