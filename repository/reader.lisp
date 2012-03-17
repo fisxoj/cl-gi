@@ -89,11 +89,14 @@ Functions for parsing things inside the namespace
 
 (defun parse-namespace (node repo)
   (loop for child in (xmlrep-children node)
-     do (switch ((xmlrep-tag child) :test 'string=)
-	  ("alias" (parse-alias child repo))
-	  ("constant" (parse-constant child repo))
-	  ("function" (parse-function child repo))
-	  (t (warn "No parser for node type ~a" (xmlrep-tag child))))))
+     do (funcall (switch ((xmlrep-tag child) :test 'string=)
+		   ("alias" #'parse-alias)
+		   ("constant" #'parse-constant)
+		   ("function" #'parse-function)
+		   ("record" #'parse-record)
+		   (t (lambda (n r) (declaim (ignore n r))
+			      (warn "No parser for node type ~a" (xmlrep-tag child)))))
+		 node repo)))
 
 
 (defun parse-alias (node repo)
