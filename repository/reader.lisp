@@ -204,7 +204,9 @@ We could get at the 'pizza' attribute of tag2 and 'name' from tag1 by passing
 (defmacro with-node-attributes (node attributes &body body)
   `(let ,(loop for attribute in attributes
 	      collect (list attribute
-			    `(xmlrep-attrib-value ,(string-downcase (symbol-name attribute)) ,node)))
+			    `(xmlrep-attrib-value ,(string-downcase (symbol-name attribute))
+						  ,node
+						  nil)))
      ,@body))
 
 (defun header-file-p (node)
