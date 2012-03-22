@@ -56,9 +56,9 @@ further processing"
 	  (include-list (when includes
 			  (loop for node in includes
 			     for name = (xmlrep-attrib-value "name" node)
-			     for version = (xmlrep-attrib-value "version" node nil)
-			     when (and name version)
-			     collect (list name version))))
+			     for i-version = (xmlrep-attrib-value "version" node nil)
+			     when (and name i-version)
+			     collect (list name i-version))))
 	  (package-list (when packages
 			  (loop for node in packages
 			     for name = (xmlrep-attrib-value "name" node)
