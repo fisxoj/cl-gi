@@ -19,8 +19,6 @@
 
 (in-package :cl-gir)
 
-
-
 (defparameter +gtype-ctype+
   '(
     ;; Basic type aliases taken from glib/gtypes.h
@@ -113,3 +111,6 @@
       collect #\-
       else collect c)
    'string))
+
+(defun c-name-to-lisp-symbol (name)
+  (read-from-string (c-name-to-lisp-name name)))
