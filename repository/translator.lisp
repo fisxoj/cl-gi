@@ -19,6 +19,11 @@
 
 (in-package :cl-gir)
 
+(defclass gir-class ()
+  ((pointer :accessor object-pointer)))
+
+(export 'gir-class)
+
 (defparameter +gtype-ctype+
   '(
     ;; Basic type aliases taken from glib/gtypes.h

@@ -92,10 +92,11 @@ Functions for parsing things inside the namespace
 		   ("alias" #'parse-alias)
 		   ("constant" #'parse-constant)
 		   ("function" #'parse-function)
-		   ("record" #'parse-record)
-		   (t (lambda (n r) (declaim (ignore n r))
+;		   ("record" #'parse-record)
+		   ("class" #'parse-class)
+		   (t (lambda (n r) (declare (ignore n r))
 			      (warn "No parser for node type ~a" (xmlrep-tag child)))))
-		 node repo)))
+		 child repo)))
 
 
 (defun parse-alias (node repo)
@@ -119,15 +120,101 @@ Functions for parsing things inside the namespace
     (when (xmlrep-attrib-value "moved-to" node nil)
       (warn "Function ~a has moved, skipping this entry" (xmlrep-attrib-value "identifier" node))
       (return-from parse-function))
-    (let* ((name (xmlrep-attrib-value "identifier" node))
-	   (lisp-name (read-from-string (gfunction->lisp name repo)))
+    (with-node-attributes node (name identifier)
+      (let* ((lisp-name (c-name-to-lisp-symbol name))
+	     (return-type (gir-to-cffi (get-type (xmlrep-find-child-tag "return-value" node))))
+	     (parameters (collect-parameters node))
+	     (*package* (repository-package repo)))
+	(print-eval `(defcfun (,(coerce identifier 'simple-string) ,lisp-name) ,return-type
+		       ,@(when parameters parameters)))
+	(export lisp-name)
+	))))
+
+
+(defun parse-record (node repo)
+  ;; FIXME: Stub.
+  )
+
+(defun make-constructor (node repo g-type)
+  (with-node-attributes node (identifier)
+    (let* ((lisp-name (c-name-to-lisp-name identifier))
 	   (return-type (gir-to-cffi (get-type (xmlrep-find-child-tag "return-value" node))))
 	   (parameters (collect-parameters node))
-	   (*package* (repository-package repo)))
-      (print-eval `(defcfun (,(coerce name 'simple-string) ,lisp-name) ,return-type
+	   (parameter-names (loop for p in parameters
+			       if (consp p)
+			       collect (car p)
+			       else
+			       collect 'rest
+				 ))
+	   (*package* (repository-package repo))
+	   (internal-name (read-from-string (format nil "%~a" lisp-name)))
+	   )
+
+      (print-eval `(defcfun (,(coerce identifier 'simple-string) ,internal-name)
+		       ,return-type
 		     ,@(when parameters parameters)))
-      (export lisp-name)
+
+      (print-eval `(defmethod initialize-instance ((o ,g-type)
+						   &key ,@parameter-names)
+		     (warn "Calling initializer for ~a" ,(symbol-name g-type))
+		     (setf (slot-value o 'pointer)
+			   (funcall (function ,internal-name) ,@(remove-if
+								 (lambda (a) (eq a '&rest))
+								 parameter-names)))))
+
+;      (export (read-from-string lisp-name))
       )))
+
+
+(defun parse-class (node repo)
+  (with-node-attributes node (name parent get-type symbol-prefix)
+    (let* ((class-type (c-name-to-lisp-symbol name))
+	   (constructor (xmlrep-find-child-tags "constructor" node))
+	   (*package* (repository-package repo))
+	   (type-fn-name (read-from-string
+			  (format nil "~a-get-type" (c-name-to-lisp-name symbol-prefix))))
+;	   (class-name (read-from-string
+;			(format nil "~a:~a" (package-name (repository-package repo)) class-type)))
+	   )
+
+      (export (intern (symbol-name class-type)))
+
+      (print-eval `(defclass ,class-type
+		       (cl-gir::gir-class) ; ,(list (resolve-c-object parent))
+		     nil))
+
+      (export (intern (symbol-name type-fn-name)))
+
+      (print-eval `(defcfun (,(coerce get-type 'simple-string)
+			      ,type-fn-name)
+		       :int))
+
+      (when constructor
+	(make-constructor (first constructor) repo class-type)))))
+
+(defun parse-method (node repo g-type)
+  (with-node-attributes node (name identifier)
+    (let* ((return-type (gir-to-cffi (get-type (xmlrep-find-child-tag "return-value" node))))
+	   (lisp-name (c-name-to-lisp-name name))
+	   (parameters (collect-parameters node))
+	   (parameter-names (loop for p in parameters
+			       collect (car p)))
+	   (*package* (repository-package repo))
+	   (internal-name (read-from-string (format nil "%~a" lisp-name)))
+	   )
+
+      `(defcfun (,(coerce identifier 'simple-string) ,internal-name)
+	   ,return-type
+	 ,@(when parameters parameters))
+
+      `(defmethod ,(read-from-string lisp-name) ((o ,g-type)
+					       &key ,@parameter-names)
+	 (funcall (function ,internal-name) (object o) ,@parameter-names))
+
+      (export (read-from-string lisp-name))
+      )))
+
+
 #|
 
 Helpler functions for reading from xmls nodes
