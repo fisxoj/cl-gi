@@ -94,6 +94,7 @@ Functions for parsing things inside the namespace
 		   ("function" #'parse-function)
 ;		   ("record" #'parse-record)
 		   ("class" #'parse-class)
+		   ("enumeration" #'parse-enumeration)
 		   (t (lambda (n r) (declare (ignore n r))
 			      (warn "No parser for node type ~a" (xmlrep-tag child)))))
 		 child repo)))
@@ -213,6 +214,18 @@ Functions for parsing things inside the namespace
 
       (export (read-from-string lisp-name))
       )))
+
+(defun parse-enumeration (node repo)
+  (let ((members (xmlrep-find-child-tags "member" node))
+	(*package* (repository-package repo))
+	)
+    (loop for member in members
+       do (with-node-attributes member (identifier value)
+	    (let ((lisp-name (lispify-gir-constant identifier)))
+	      (export (intern lisp-name))
+	      (print-eval `(defconstant ,(read-from-string lisp-name)
+			     ,(if (eq type :string) value (read-from-string value)))))
+	    ))))
 
 
 #|
