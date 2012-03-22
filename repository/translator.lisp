@@ -114,3 +114,11 @@
 
 (defun c-name-to-lisp-symbol (name)
   (read-from-string (c-name-to-lisp-name name)))
+
+(defun resolve-c-object (name)
+  (read-from-string (with-output-to-string (s)
+		      (loop for i across name
+			 if (eq i #\.)
+			 do (princ #\: s)
+			 else
+			 do (princ i s)))))
