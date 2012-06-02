@@ -51,7 +51,7 @@ further processing"
   (with-node-attributes namespace (name version identifier-prefixes symbol-prefixes shared-library)
     (let ((repo-name (name-repository name version))
 	  (so-files (split-comma shared-library))
-	  (t-prefixes (split-comma identifier-prefixes))
+	  (s-prefixes (split-comma identifier-prefixes))
 	  (f-prefixes (split-comma symbol-prefixes))
 	  (include-list (when includes
 			  (loop for node in includes
@@ -70,7 +70,7 @@ further processing"
 		 :name name
 		 :version version
 		 :so so-files
-		 :t-prefixes t-prefixes
+		 :s-prefixes s-prefixes
 		 :f-prefixes f-prefixes
 		 :packages package-list
 		 :includes include-list
@@ -221,10 +221,10 @@ Functions for parsing things inside the namespace
 	)
     (loop for member in members
        do (with-node-attributes member (identifier value)
-	    (let ((lisp-name (lispify-gir-constant identifier)))
+	    (let ((lisp-name (gsymbol->lisp identifier repo)))
 	      (export (intern lisp-name))
 	      (print-eval `(defconstant ,(read-from-string lisp-name)
-			     ,(if (eq type :string) value (read-from-string value)))))
+			     ,(read-from-string value))))
 	    ))))
 
 
@@ -269,9 +269,6 @@ Helpler functions for reading from xmls nodes
 (defun split-comma (string)
   (split-sequence #\, string))
 
-(defun name-repository (name version)
-  (format nil "~a-~a" name version))
-
 #|
 (defmacro with-node-attributes (node attributes &body body)
   "Fetches node attributes based on a short notation for getting to them from the current node
@@ -302,10 +299,10 @@ We could get at the 'pizza' attribute of tag2 and 'name' from tag1 by passing
 
 (defmacro with-node-attributes (node attributes &body body)
   `(let ,(loop for attribute in attributes
-	      collect (list attribute
-			    `(xmlrep-attrib-value ,(string-downcase (symbol-name attribute))
-						  ,node
-						  nil)))
+	    collect (list attribute
+			  `(xmlrep-attrib-value ,(string-downcase (symbol-name attribute))
+						,node
+						nil)))
      ,@body))
 
 (defun header-file-p (node)

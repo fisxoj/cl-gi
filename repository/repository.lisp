@@ -25,7 +25,7 @@
   ((name :accessor repository-name :initarg :name)
    (version :accessor repository-version :initarg :version)
    (function-prefixes :accessor repository-function-prefixes :initarg :f-prefixes)
-   (type-prefixes :accessor repository-type-prefixes :initarg :t-prefixes)
+   (symbol-prefixes :accessor repository-symbol-prefixes :initarg :s-prefixes)
    (shared-library :accessor repository-shared-library :initarg :so)
    (includes :accessor repository-includes :initarg :includes)
    (packages :accessor repository-packages :initarg :packages)
@@ -51,3 +51,9 @@
   `(define-foreign-library ,name
      (:unix (:or ,@so-list))
      (t (:default ,(first (split-sequence "." (first so-list)))))))
+
+(defun repository-get-repository (name version)
+  (gethash (name-repository name version) *repository*))
+
+(defun name-repository (name version)
+  (format nil "~a-~a" name version))
