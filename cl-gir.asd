@@ -4,12 +4,14 @@
   :license "GPLv3"
   :serial t
   :components ((:file "package")
-	       (:module repository
-			:pathname "repository"
-			:components ((:file "repository")
-				     (:file "finder")
-				     (:file "reader")
-				     (:file "translator")
-				     )
+;	       (:file "repository")
+;	       (:file "finder")
+;	       (:file "reader")
+	       (:file "translator")
+	       (:module girepository
+			:components ((:file "translators")
+				     (:file "includes")
+				     (:file "girepository")
+				     ) 
 			))
-  :depends-on ("cffi" "alexandria" "xmls" "split-sequence"))
+  :depends-on ("cffi" "split-sequence"))

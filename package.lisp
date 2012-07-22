@@ -20,7 +20,9 @@
 (in-package :cl-user)
 
 (defpackage :cl-gir
-  (:use :cffi :cl :alexandria :xmls :split-sequence)
+  (:use :cffi :cl)
+
+  (:nicknames :gir)
 
   ;; Repository functions
   (:export
