@@ -1,17 +1,15 @@
-(defsystem cl-gir
+(asdf:defsystem :cl-gi
   :version "0.1"
   :author "Matt Novenstern <fisxoj@gmail.com>"
   :license "GPLv3"
   :serial t
   :components ((:file "package")
-;	       (:file "repository")
-;	       (:file "finder")
-;	       (:file "reader")
 	       (:file "translator")
-	       (:module girepository
-			:components ((:file "translators")
+	       (:module src
+			:components ((:file "util")
+				     (:file "translators")
 				     (:file "includes")
 				     (:file "girepository")
-				     ) 
-			))
+				     (:file "constant")
+				     (:file "enum"))))
   :depends-on ("cffi" "split-sequence"))

@@ -19,14 +19,13 @@
 
 (in-package :cl-user)
 
-(defpackage :cl-gir
+(defpackage :cl-gi
   (:use :cffi :cl)
 
-  (:nicknames :gir)
+  (:nicknames :gi)
 
   ;; Repository functions
   (:export
    #:find-repository
    #:load-repository
-   )
-  )
+   ))

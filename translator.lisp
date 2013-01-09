@@ -17,21 +17,44 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
 ;; Floor, Boston, MA 02110-1301, USA.
 
-(in-package :cl-gir)
+(in-package :cl-gi)
 
-(defclass gir-class ()
+(defclass gi-class ()
   ((pointer :accessor object-pointer)))
 
-(export 'gir-class)
+(export 'gi-class)
+
+(defcenum gi-info-type
+  :invalid
+  :function
+  :callback
+  :struct
+  :boxed
+  :enum
+  :flags
+  :object
+  :interface
+  :constant
+  :invalid-0
+  :union
+  :value
+  :signal
+  :vfunc
+  :property
+  :field
+  :arg
+  :type
+  :unresolved)
 
 (defparameter +gtype-ctype+
   '(
     ;; Basic type aliases taken from glib/gtypes.h
+    ("void"	.	:void)
     ("gchar" 	.	:char)
     ("gshort" 	.	:short)
     ("glong" 	.	:long)
     ("gint"	.	:int)
-    ("gboolean" .	:int)
+
     ("gpointer" .	:pointer)
 
     ;; More types
@@ -40,6 +63,7 @@
     ("char"	.	:char)
     ("char*"	.	:string)
     ("gchar*"	.	:string)
+    ("utf8"	.	:string)
 
     ;; FIXME: This isn't right, but there doesn't seem to be a
     ;; long-double type in cffi
@@ -116,6 +140,9 @@
       collect #\-
       else collect c)
    'string))
+
+(defun c-name-to-lisp-keyword (name)
+  (intern (string-upcase (c-name-to-lisp-name name)) :keyword))
 
 (defun c-name-to-lisp-symbol (name)
   (read-from-string (c-name-to-lisp-name name)))

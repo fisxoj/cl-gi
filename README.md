@@ -1,28 +1,26 @@
-# Cl-GIR
+# Cl-GI
 This is my attempt at building automatic binding generation based on the .gir files from [Gobject introspection](http://live.gnome.org/GObjectIntrospection/).  It is currently by no means complete, it doesn't even attempt to load object information yet.  But I wanted to share it with anyone who finds it, and have a backup available in the event my computer explodes.
 
 ## Requirements
 
-You can peek at cl-gir.asd for the most up-to-date information, but as of now, it depends on
+You can peek at cl-gi.asd for the most up-to-date information, but as of now, it depends on
 * cffi
-* alexandria
-* xmls
 * split-sequence
 
 which you can install by running
 
-	(loop for package in '("cffi" "alexandria" "xmls" "split-sequence")
+	(loop for package in '("cffi" "split-sequence")
 		do (ql:quickload package))
 
-at your REPL.  You'll also need some gir libraries installed.  cl-gir will look in `/usr/share/gir-1.0/`.
+at your REPL.  You'll also need some typelibs, which should be installed along with most modern gobject libraries.
 
 ## How to use it
 
 Right now, fire up your lisp and follow me!  I'll show a few short things
 
-	(require 'cl-gir)
+	(require 'cl-gi)
 	
-	(cl-gir:load-repository "GLib" "2.0")
+	(cl-gir:load-typelib "GLib" "2.0")
 
 As things currently stand, this will result in your lisp telling you about all the things it doesn't know how to parse, and a bunch of things about constants, aliases, and functions, which it does.  When it finishes, you should be able to do things like this:
 
